@@ -2,10 +2,11 @@
 #include <vector>
 #include <cmath>
 #include <cstdlib>
+#include <ctime>
 
 using namespace std;
 
-//Activation Functions
+// Activation Functions
 double ReLU(double x) {
     return max(0.0, x);
 }
@@ -18,17 +19,16 @@ double sigmoid(double x) {
     return 1 / (1 + exp(-x));
 }
 
-double sigmoid_derivaive(double x) {
-    return sigmoid(x) * (1 - sigmoid(x));
+double sigmoid_derivative(double a) {
+    return a * (1 - a);
 }
 
 // LOSS function
-double meanSquaredError(vector<double> predictions, vector<double> targets) {
+double meanSquaredError(const vector<double>& predictions, const vector<double>& targets) {
     double sum = 0;
     for (size_t i = 0; i < predictions.size(); i++) {
         sum += pow(predictions[i] - targets[i], 2);
     }
-
     return sum / predictions.size();
 }
 
@@ -63,8 +63,8 @@ class NeuralNetwork {
             }
         }
 
-        //Forward Propagation
-        vector<double> forward(vector<double> input, vector<double> &hiddenLayer) 
+        // Forward Propagation
+        vector<double> forward(const vector<double>& input, vector<double> &hiddenLayer) 
         {
             hiddenLayer.assign(weights1[0].size(), 0);
 
@@ -93,14 +93,13 @@ class NeuralNetwork {
             return output;
         }
 
-        vector<double> predict(vector<double> input) {
+        vector<double> predict(const vector<double>& input) {
             vector<double> hiddenLayer;
-
             return forward(input, hiddenLayer);
         }
 
-        // Trainig with Backpropagation
-        void train(vector<vector<double>> inputs, vector<vector<double>> targets, double learningRate, int epochs) 
+        // Training with Backpropagation
+        void train(const vector<vector<double>>& inputs, const vector<vector<double>>& targets, double learningRate, int epochs) 
         {
             for(int e = 0; e < epochs; e++) {
                 double totalLoss = 0;
@@ -111,10 +110,10 @@ class NeuralNetwork {
                     double loss = meanSquaredError(output, targets[i]);
                     totalLoss += loss;
 
-                    //Compute Gradients (Backpropagation)
+                    // Compute Gradients (Backpropagation)
                     vector<double> outputGradients(output.size());
                     for (size_t j = 0; j < output.size(); j++) {
-                        outputGradients[j] = (output[j] - targets[i][j]) * sigmoid_derivaive(output[j]);
+                        outputGradients[j] = (output[j] - targets[i][j]) * sigmoid_derivative(output[j]);
                     }
 
                     vector<double> hiddenGradients(hiddenLayer.size());
@@ -123,12 +122,10 @@ class NeuralNetwork {
                         for(size_t k = 0; k < output.size(); k++) {
                             hiddenGradients[j] += outputGradients[k] * weights2[j][k];
                         }
-
                         hiddenGradients[j] *= ReLU_derivative(hiddenLayer[j]);
                     }
 
                     // Update weights and Biases
-
                     for(size_t j = 0; j < weights2.size(); j++) {
                         for(size_t k = 0; k < weights2[j].size(); k++) {
                             weights2[j][k] -= learningRate * outputGradients[k] * hiddenLayer[j];
@@ -148,10 +145,10 @@ class NeuralNetwork {
                     for(size_t j = 0; j < bias1.size(); j++) {
                         bias1[j] -= learningRate * hiddenGradients[j];
                     }
+                }
 
-                    if (e % 1000 == 0) {
-                        cout << " EPOCH : " << e << " LOSS : " << totalLoss / inputs.size() << endl;
-                    }
+                if (e % 1000 == 0) {
+                    cout << " EPOCH : " << e << " LOSS : " << totalLoss / inputs.size() << endl;
                 }
             }
         }
@@ -159,22 +156,20 @@ class NeuralNetwork {
 
 int main() {
 
-    NeuralNetwork nn(2,3,3);
+    NeuralNetwork nn(2, 3, 1); 
 
-    //XOR Training data
-    vector<vector<double>> inputs = {{0,0}, {0,1}, {1,0}, {1,1}}; //4x2
+    // XOR Training data
+    vector<vector<double>> inputs = {{0,0}, {0,1}, {1,0}, {1,1}}; 
+    vector<vector<double>> targets = {{0}, {1}, {1}, {0}}; 
 
-    vector<vector<double>> targets = {{0}, {1}, {1}, {0}}; //4x1
+    nn.train(inputs, targets, 0.1, 10000);
 
-    nn.train(inputs, targets, 0.05, 3000);
+    cout << "\nTraining complete\n" << endl;
 
-    cout << "\n Trainig complete \n" << endl;
-
-    cout << "predictions after training: " << endl;
+    cout << "Predictions after training: " << endl;
     for (const auto &input : inputs) {
-        vector<double> prediction == nn.predict(input);
-
-        cout << "Input : [" << input[0] << " , " << input[1] << "] -> prediction : " << prediction[0] << endl;
+        vector<double> prediction = nn.predict(input);
+        cout << "Input : [" << input[0] << " , " << input[1] << "] -> Prediction : " << prediction[0] << endl;
     }
 
     return 0;
